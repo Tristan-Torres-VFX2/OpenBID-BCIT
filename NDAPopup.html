@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 
+      This is a custom Google Sheets popup script to display a list of vendors and allow users to send NDAs. 
+      The script fetches the vendor list and their corresponding NDA status from the sheet and renders it within the popup.
+      When a user clicks on the "Send NDA" button, it triggers a server-side function to send the NDA and updates the NDA status.
+      The script also disables all buttons and displays a loading gif while the NDA is being sent.
+    -->
+
+    <!-- Sets the target for all hyperlinks and forms in the popup to the top-level browsing context -->
+    <base target="_top">
+
+    <!-- Imports the Bootstrap CSS library -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- Defines custom styles for the popup -->
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap');
+
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+
+      #popup-container {
+        padding: 10px;
+      }
+
+      #logo {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto 20px;
+      }
+
+      .vendor-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .btn-send-nda {
+        color: #fff;
+        border-radius: 5px;
+      }
+
+      .btn-send-nda.disabled {
+        background-color: #ccc;
+        border-color: #ccc;
+      }
+
+      .btn-send-nda.active {
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+      }
+
+      .btn-close {
+        background-color: #d9534f;
+        border-color: #d43f3a;
+        color: #fff;
+        margin-top: 20px;
+        border-radius: 5px;
+        display: block;
+        width: 100%;
+      }
+
+      #error-container {
+        text-align: center;
+      }
+
+      #error-container iframe {
+        display: block;
+        margin: 0 auto;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="popup-container">
+      <img src="https://storage.googleapis.com/openbid-images/firewall%20openBID.120x120.png" alt="Logo" id="logo">
+      <div id="error-container" style="display: none; color: red; margin-bottom: 20px;">
+        <p></p>
+        <!-- <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSe10cMsbP0sshWzmF4dNR0cC_Q0sDfR9sqAKCCRlzcjVrSkvQ/viewform?embedded=true" width="640" height="1931" frameborder="0" marginheight="0" marginwidth="0" style="display: none;">Loading…</iframe> -->
+      </div>
+      <div id="vendor-list-container" style="position: relative;">
+        <div id="loading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 20px; text-align: center; background: rgba(255, 255, 255, 0.8); z-index: 10;">
+          <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" alt="Loading" style="margin-top: 20px;" />
+        </div>
+        <div id="vendor-list">
+          <!-- Vendor list will be populated here -->
+        </div>
+        <div id="loading-gif" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+          <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" alt="Loading" />
+        </div>
+      </div>
+      <button class="btn btn-close" onclick="google.script.host.close();" id="close-button">Close</button>
+    </div>
+
+    <script>
+      function renderVendorList(vendorList, vendorNDAList) {
+        var html = '';
+        for (var i = 0; i < vendorList.length; i++) {
+          if (isValidEmail(vendorList[i][0])) {
+            var btnClass = vendorNDAList[i][0] ? 'btn-send-nda disabled' : 'btn-send-nda active';
+            var btnText = vendorNDAList[i][0] ? 'Resend NDA' : 'Send NDA';
+            html += '<div class="vendor-item">';
+            html += '<span>' + vendorList[i][0] + '</span>';
+            html += '<button class="' + btnClass + '" data-index="' + i + '">' + btnText + '</button>';
+            html += '</div>';
+          }
+        }
+        return html;
+      }
+
+      function onButtonClick(e) {
+        var button = e.target;
+        var index = button.getAttribute('data-index');
+        
+        button.className = 'btn-send-nda disabled';
+        button.textContent = 'Resend NDA';
+        
+        // Disable buttons while the script is running
+        toggleButtons(false);
+
+        // Show the loading gif
+        toggleLoadingGif(true);
+
+          google.script.run
+        .withSuccessHandler(function() {
+          // Hide the loading gif
+          toggleLoadingGif(false);
+
+          // Enable buttons after the script is completed
+          toggleButtons(true);
+        })
+        .withFailureHandler(function() {
+          // Hide the loading gif
+          toggleLoadingGif(false);
+
+          // Enable buttons after the script is completed
+          toggleButtons(true);
+        })
+        .sendNDA(index);
+      }
+
+      function toggleLoadingGif(visible) {
+        var loadingGif = document.getElementById('loading-gif');
+        loadingGif.style.display = visible ? 'block' : 'none';
+      }
+
+      function toggleButtons(enabled) {
+        var buttons = document.querySelectorAll('.btn-send-nda');
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].disabled = !enabled;
+        }
+      }
+
+      // Function to check if a string is a valid email address
+      function isValidEmail(email) {
+        // Regular expression pattern to match valid email addresses
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailPattern.test(email);
+      }
+
+      // Get the vendorList and vendorNDAList data from the server-side script
+      google.script.run.withSuccessHandler(function(result) {
+      if (result.error) {
+        var errorContainer = document.getElementById('error-container');
+        var errorMsg = errorContainer.querySelector('p');
+        var iframe = errorContainer.querySelector('iframe');
+        var closeButton = document.getElementById('close-button');
+
+        if (result.error === "Cannot read properties of null (reading 'getValues')") {
+          errorMsg.innerText = 'This only works with OpenBID Client spreadsheets. Use the OpenBID Toolkit menu to duplicate the newest one.';
+          iframe.style.display = 'block';
+          closeButton.style.display = 'none';
+        } else {
+          errorMsg.innerText = 'Error: ' + result.error;
+          closeButton.style.display = 'block';
+        }
+
+        errorContainer.style.display = 'block';
+        document.getElementById('loading').style.display = 'none';
+      } else {
+        document.getElementById('vendor-list').innerHTML = renderVendorList(result.vendorList, result.vendorNDAList);
+
+        // Hide the loading gif
+        document.getElementById('loading').style.display = 'none';
+
+        // Add event listeners to buttons
+        var buttons = document.querySelectorAll('.btn-send-nda');
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].addEventListener('click', onButtonClick);
+        }
+
+        // Enable buttons
+        toggleButtons(true);
+      }
+    }).getVendorNDAData();
+
+    // Disable buttons while the script is running
+    toggleButtons(false);
+    
+    </script>
+  </body>
+</html>

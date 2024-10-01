@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--
+      This is a custom Google Sheets popup script to display a list of vendors and allow users to request bids.
+      The script fetches the vendor list and their corresponding bid status from the sheet and renders it within the popup.
+      When a user clicks on the "Request Bid" button, it triggers a server-side function to send the bid and updates the bid status.
+      The script also disables all buttons and displays a loading gif while the bid request is being sent.
+    -->
+    <base target="_top">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap');
+
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+
+      #popup-container {
+        padding: 10px;
+      }
+
+      #logo {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto 20px;
+      }
+
+      .vendor-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .btn-send-bid {
+        color: #fff;
+        border-radius: 5px;
+      }
+
+      .btn-send-bid.disabled {
+        background-color: #ccc;
+        border-color: #ccc;
+      }
+
+      .btn-send-bid.active {
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+      }
+
+      .btn-close {
+        background-color: #d9534f;
+        border-color: #d43f3a;
+        color: #fff;
+        margin-top: 20px;
+        border-radius: 5px;
+        display: block;
+        width: 100%;
+      }
+
+      #error-container {
+        text-align: center;
+      }
+
+      #error-container iframe {
+        display: block;
+        margin: 0 auto;
+      }
+
+    </style>
+  </head>
+    <body>
+    <!-- Popup container -->
+    <div id="popup-container">
+      <!-- Logo image -->
+      <img src="https://storage.googleapis.com/openbid-images/firewall%20openBID.120x120.png" alt="Logo" id="logo">
+      <div id="error-container" style="display: none; color: red; margin-bottom: 20px;">
+        <p></p>
+        <!-- <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSe10cMsbP0sshWzmF4dNR0cC_Q0sDfR9sqAKCCRlzcjVrSkvQ/viewform?embedded=true" width="640" height="1931" frameborder="0" marginheight="0" marginwidth="0" style="display: none;">Loading…</iframe> -->
+      </div>
+      <!-- Vendor list container -->
+      <div id="vendor-list-container" style="position: relative;">
+          <!-- Vendor list table -->
+          <table id="vendor-list" class="table">
+            <!-- Vendor list and buttons will be populated here -->
+          </table>
+          <!-- Loading gif -->
+        <div id="loading-gif" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+          <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" alt="Loading" />
+        </div>
+      </div>
+      <!-- Close button -->
+      <button class="btn btn-close" onclick="google.script.host.close();" id="close-button">Close</button>
+    </div>
+        <script>
+      // Function to toggle the state of all buttons
+      function toggleButtons(state) {
+        var buttons = document.querySelectorAll('.btn-send-bid');
+        for (var i = 0; i < buttons.length; i++) {
+          buttons[i].disabled = !state;
+        }
+      }
+
+      // Function to render the vendor list and associated buttons
+      function renderVendorList(vendorList, episodeList) {
+        // Create table headers
+        var html = '<thead><tr><th></th>';
+
+        // Add episode column headings
+        for (var e = 0; e < episodeList.length; e++) {
+          if (episodeList[e][0] !== '' && episodeList[e][0] !== '-') {
+            html += '<th>' + episodeList[e][0] + '</th>';
+          }
+        }
+        html += '</tr></thead><tbody>';
+
+        // Add rows with vendor email and buttons
+        for (var v = 0; v < vendorList.length; v++) {
+          if (isValidEmail(vendorList[v][0])) {
+            html += '<tr>';
+            html += '<td>' + vendorList[v][0] + '</td>';
+            for (var e = 0; e < episodeList.length; e++) {
+              if (episodeList[e][0] !== '' && episodeList[e][0] !== '-') {
+                var btnClass = 'btn-send-bid active';
+                var btnText = 'Send Bid Breakdown';
+                html += '<td><button class="' + btnClass + '" data-row="' + (v + 1) + '" data-col="' + (e + 1) + '">' + btnText + '</button></td>';
+              }
+            }
+            html += '</tr>';
+          }
+        }
+        html += '</tbody>';
+
+        return html;
+      }
+
+      // Function to check if a string is a valid email address
+      function isValidEmail(email) {
+        // Regular expression pattern to match valid email addresses
+        var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailPattern.test(email);
+      }
+
+      // Function to initialize the popup
+      function initializePopup() {
+        // Get the vendorList and episodeList data from the server-side script
+        google.script.run
+          .withSuccessHandler(function(result) {
+            if (result.error) {
+              var errorContainer = document.getElementById('error-container');
+              var errorMsg = errorContainer.querySelector('p');
+              var iframe = errorContainer.querySelector('iframe');
+              var closeButton = document.getElementById('close-button');
+
+              if (result.error === "Cannot read properties of null (reading 'getValues')") {
+                errorMsg.innerText = 'This only works with OpenBID Client spreadsheets. Use the OpenBID Toolkit menu to duplicate the newest one.';
+                iframe.style.display = 'block';
+                closeButton.style.display = 'none';
+              } else {
+                errorMsg.innerText = 'Error: ' + result.error;
+                closeButton.style.display = 'block';
+              }
+
+              errorContainer.style.display = 'block';
+              document.getElementById('loading-gif').style.display = 'none';
+            } else {
+              document.getElementById('vendor-list').innerHTML = renderVendorList(result.vendorList, result.episodeList);
+
+              // Add event listeners to buttons
+              var buttons = document.querySelectorAll('.btn-send-bid');
+              for (var i = 0; i < buttons.length; i++) {
+                buttons[i].addEventListener('click', function() {
+                  var row = parseInt(this.getAttribute('data-row'));
+                  var col = parseInt(this.getAttribute('data-col'));
+                  handleButtonClick(row, col, this);
+                });
+              }
+
+              // Enable buttons
+              toggleButtons(true);
+            }
+          })
+          .getVendorBidData();
+      }
+
+      // Function to handle button clicks
+      function handleButtonClick(row, col, button) {
+        var vendorEmail = button.parentElement.parentElement.firstChild.textContent;
+
+        // Disable buttons and show loading gif
+        button.className = 'btn-send-bid disabled';
+        button.textContent = 'Sent Bid Breakdown';
+        toggleButtons(false);
+        document.getElementById('loading-gif').style.display = 'block';
+
+        // Call server-side function to send bid
+        google.script.run
+          .withSuccessHandler(function() {
+            // Enable buttons and hide loading gif
+            toggleButtons(true);
+            document.getElementById('loading-gif').style.display = 'none';
+          })
+          .withFailureHandler(function() {
+            // Enable buttons and hide loading gif
+            toggleButtons(true);
+            document.getElementById('loading-gif').style.display = 'none';
+          })
+          .sendBid(row, col, vendorEmail);
+      }
+
+      // Initialize the popup
+      initializePopup();
+
+    </script>
+  </body>
+</html>
+
+
+
+
+

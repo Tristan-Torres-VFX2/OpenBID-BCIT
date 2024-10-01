@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 
+      This code creates an HTML-based user interface for a Google Sheets add-on that allows users to fetch images from a specified Google Drive folder and insert them into the active cell. It handles errors such as no images found in the folder and hides the error message when the user clicks the "Show Images" button again.
+    -->
+    <base target="_top">
+    <!-- Link to the font used throughout the app -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* Basic styling for the app */
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+      input[type=text] {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        cursor: pointer;
+        font-size: 1.1em;
+      }
+      button:hover {
+        opacity: 0.8;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+      }
+      .image-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .image-title {
+        margin-top: 5px;
+      }
+      #loading {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Input form for folder URL -->
+    <div>
+      <label for="folderUrl"><b>Enter GDrive Folder URL</b></label>
+      <input type="text" placeholder="Folder URL That Anyone With The Link Can View" id="folderUrl" required>
+      <button onclick="autoInsertImages()">Auto-Insert Images Matching Shot IDs or Asset IDs</button>
+      <button onclick="listImages()">Show Images</button>
+      <hr>
+    </div>
+
+    <!-- Loading animation while fetching images -->
+    <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" alt="Loading" id="loading" />
+    
+    <!-- Error message when no images are found -->
+    <p id="errorMessage" style="display: none;">No images found!</p>
+
+    <!-- Container to display the list of images -->
+    <div class="container" id="imageList"></div>
+    
+    <script>
+      // Function to fetch and display the list of images
+      function listImages() {
+        // Hide the error message when the button is clicked
+        document.getElementById("errorMessage").style.display = "none";
+        // Get the folder URL from the input field
+        var folderUrl = document.getElementById("folderUrl").value;
+        // Show the loading animation
+        document.getElementById("loading").style.display = "block";
+        // Fetch the images using Google Apps Script
+        google.script.run.withSuccessHandler(displayImages).withFailureHandler(showError).getImages(folderUrl);
+      }
+
+      // Function to display the fetched images
+      function displayImages(images) {
+        // Clear the image list
+        var imageList = document.getElementById('imageList');
+        imageList.innerHTML = '';
+        // Hide the loading animation
+        document.getElementById("loading").style.display = "none";
+
+        // Show the error message if no images are found
+        if (images.length === 0) {
+          document.getElementById("errorMessage").style.display = "block";
+          return;
+        }
+
+        // Sort images alphabetically by name
+        images.sort(function(a, b) {
+          return a.name.localeCompare(b.name);
+        });
+
+        // Loop through the fetched images and create elements for each image
+        images.forEach(function (image) {
+          // Create a new row for each image
+          var imageRow = document.createElement('div');
+          imageRow.classList.add('image-row');
+
+          // Create the image title as a link and set its content
+          var imageLink = document.createElement('a');
+          imageLink.href = image.url;
+          imageLink.target = '_blank';
+          imageLink.textContent = image.name;
+          imageLink.classList.add('image-title');
+
+          // Create the insert button and set its functionality
+          var insertButton = document.createElement('button');
+          insertButton.textContent = 'Insert Into Active Cell';
+          insertButton.onclick = function () {
+            // Insert the image into the active cell using Google Apps Script
+            google.script.run.insertImage(image.url);
+          };
+
+          // Add the elements to the image row and the image list
+          imageRow.appendChild(imageLink);
+          imageRow.appendChild(insertButton);
+          imageList.appendChild(imageRow);
+        });
+      }
+
+
+      // Function to automatically insert images that match the IDs
+      function autoInsertImages() {
+        // Get the folder URL from the input field
+        var folderUrl = document.getElementById("folderUrl").value;
+        // Show the loading animation
+        document.getElementById("loading").style.display = "block";
+        // Fetch the images using Google Apps Script
+        google.script.run.withSuccessHandler(autoInsertHandler).withFailureHandler(showError).autoInsertImages(folderUrl);
+      }
+
+      // Function to handle the result of autoInsertImages
+      function autoInsertHandler(result) {
+        // Hide the loading animation
+        document.getElementById("loading").style.display = "none";
+        
+        // Show the error message if no IDs are found
+        if (result.error) {
+          document.getElementById("errorMessage").innerText = result.error;
+          document.getElementById("errorMessage").style.display = "block";
+          return;
+        }
+
+        // Display the message about successful insertion
+        document.getElementById("errorMessage").innerText = result.message;
+        document.getElementById("errorMessage").style.display = "block";
+      }
+
+      // Function to handle access errors
+      function showError(error) {
+        // Hide the loading animation
+        document.getElementById("loading").style.display = "none";
+        
+        // Show the error message
+        document.getElementById("errorMessage").innerText = error.message;
+        document.getElementById("errorMessage").style.display = "block";
+      }
+
+    </script>
+  </body>
+</html>

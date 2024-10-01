@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 
+      This is a custom Google Sheets popup script to display a link to the firewall spreadsheet.
+    -->
+    <base target="_top">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
+    <style>
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+      
+      .button {
+        display: inline-block;
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      .button:hover {
+        background-color: #4cae4c;
+      }
+    </style>
+  </head>
+  <body>
+    <img src="https://storage.googleapis.com/openbid-images/firewall%20openBID.120x120.png" alt="OpenBID Toolkit Image">
+    <p>
+      A dedicated firewall spreadsheet protects all the sensitive data in this main sheet. To continue, simply visit the Firewall sheet once to grant access, then close this pop up.
+    </p>
+    <img src="https://storage.googleapis.com/openbid-images/allow%20access.png" alt="Allow Access Image">
+    <a id="firewall-link" class="button" href="<?= firewallSpreadsheetUrl ?>" target="_blank" rel="noopener noreferrer">Allow Access To Continue</a>
+  </body>
+</html>
+

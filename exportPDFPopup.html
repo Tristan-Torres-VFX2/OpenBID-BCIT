@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 
+      This is a custom Google Sheets popup script to display a link to the backup spreadsheet.
+      It uses the Google Fonts API to import the 'Lexend' font family and applies custom styling to the body and button.
+    -->
+    <base target="_top">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
+    <style>
+      /* 
+        Apply the 'Lexend' font to the entire body of the HTML document
+      */
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+      
+      /* 
+        Style the button with a red background, white text, padding, no underline, rounded corners, and bold text.
+        Add a hover effect that changes the background color when the user hovers over the button.
+      */
+      .button {
+        display: inline-block;
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      .button:hover {
+        background-color: #4cae4c;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 
+      Display an image (the company logo) from Google Drive
+    -->
+    <img src="https://storage.googleapis.com/openbid-images/firewall%20openBID.120x120.png" alt="Logo">
+    <p>
+      <!-- 
+        Provide instructions to the user on how to proceed with the backup spreadsheet
+      -->
+      A backup of this spreadsheet, formatted for PDF export, has been created.<br>To proceed:
+      <ul>
+        <li>Click the button below to visit the backup sheet and download the backup sheet as a PDF.</li>
+        <li>Copy the content from the SUMMARY tab in the backup sheet and paste it into an email to your client.</li>
+        <li>Attach the downloaded PDF to the email.</li>
+      </ul>
+      <!-- 
+        Display another image (an icon or informational image) from Google Drive
+      -->
+      <img src="https://storage.googleapis.com/openbid-images/downloadAsPDF.png" alt="Download PDF Image"><br><br>
+      <!-- 
+        Inform the user of the updated bid version and that the client summary table has been updated
+      -->
+      This main spreadsheet has been updated to Bid Version <?= newNumber ?>, and the client summary table has been updated as well. 
+    </p>
+    <!-- 
+      Inform the user to turn off notes in the PDF
+    -->
+    <p>
+      Note: When printing to PDF, open the formatting section in the print sidebar and turn OFF notes. 
+    </p>
+    <!-- 
+      Provide a link to the backup spreadsheet with the custom-styled button
+    -->
+    <a id="backup-link" class="button" href="<?= backupSpreadsheetURL ?>" target="_blank" rel="noopener noreferrer">Go To Backup File To Download PDF</a>
+  </body>
+</html>

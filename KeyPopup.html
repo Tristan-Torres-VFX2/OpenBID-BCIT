@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 
+      This is a custom Google Sheets popup script to display a form to enter the OpenAI API key.
+    -->
+    
+    <base target="_top">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap');
+      body {
+        font-family: 'Lexend', sans-serif;
+        padding: 20px;
+      }
+
+      #logo {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto 20px;
+      }
+
+      #key-input {
+        margin-bottom: 20px;
+      }
+
+      #submit-button {
+        background-color: #5cb85c;
+        border-color: #4cae4c;
+        color: #fff;
+        border-radius: 5px;
+        display: block;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="popup-container">
+      <img src="https://storage.googleapis.com/openbid-images/firewall%20openBID.120x120.png" alt="Logo" id="logo"> <br>
+      <img src="https://storage.googleapis.com/openbid-images/OpenAI.png" alt="OpenAI Custom Functions" id="logo">
+       <p>
+       Enter your OpenAI API key to activate the GPT() and DALLE() custom functions. Your API key is securely encrypted in the document properties, remaining invisible to all, including yourself. Obtain your OpenAI Secret key <a href='https://beta.openai.com/account/api-keys' target='_blank'>here</a>.
+       </p>
+      <div id="form-container">
+        <input type="password" id="key-input" class="form-control" placeholder="Enter Your OpenAI Secret Key">
+        <button class="btn" id="submit-button" onclick="submitKey();">Submit</button>
+      </div>
+    </div>
+
+    <script>
+      function submitKey() {
+        var key = document.getElementById('key-input').value;
+        if (key) {
+          google.script.run.storeKey(key);
+          google.script.host.close();
+        } else {
+          alert('Please enter your OpenAI Secret Key');
+        }
+      }
+    </script>
+  </body>
+</html>

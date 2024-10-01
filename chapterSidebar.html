@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Lexend', sans-serif;
+      }
+      input[type=text] {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        cursor: pointer;
+        font-size: 1.1em;
+      }
+      button:hover {
+        opacity: 0.8;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+      }
+      .image-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .image-title {
+        margin-top: 5px;
+      }
+      #loading {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+
+      <!-- Input form for URL -->
+      <label for="youtubeUrl"><b>YouTube Video URL</b></label>
+      <input type="text" placeholder="Enter Private YouTube URL You Own" id="youtubeUrl" required>
+      <button onclick="autoInsertChapters()">Auto-Insert Chapters Matching ShotIDs</button>
+      <button onclick="listChapters()">Show Chapters</button>
+        <details open>
+          <summary style="font-size: 0.8em;"> </summary>
+          <p style="font-size: 0.8em;">You must own the private YouTube video. Additionally, to utilize the auto-insert feature, ensure your YouTube video description contains <a href='https://youtu.be/b1Fo_M_tj6w?si=RdKc9C_1_1FhOGyV' target='_blank'>chapters</a> that match the shot IDs. For example:<br>0:00 - ep101_010_010<br>0:15 - ep101_010_020</p>
+        </details>
+      <hr>
+    </div>
+    
+    <!-- Loading animation while fetching images -->
+    <img src="https://c.tenor.com/I6kN-6X7nhAAAAAj/loading-buffering.gif" alt="Loading" id="loading" />
+
+    <!-- Error message when no images are found -->
+    <p id="errorMessage" style="display: none;">No chapters found!</p>
+
+    <!-- Container to display the list of chapters -->
+    <div class="container" id="imageList"></div>
+
+    <script>
+      function listChapters() {
+        document.getElementById("errorMessage").style.display = "none";
+        var youtubeUrl = document.getElementById("youtubeUrl").value;
+        document.getElementById("loading").style.display = "block";
+        google.script.run.withSuccessHandler(displayChapters).extractChapters(youtubeUrl);
+      }
+
+
+      function displayChapters(chapters) {
+        var chapterList = document.getElementById("imageList");
+        chapterList.innerHTML = "";
+        document.getElementById("loading").style.display = "none";
+
+
+        if (chapters.length === 0) {
+          document.getElementById("errorMessage").style.display = "block";
+          return;
+        }
+
+
+        chapters.forEach(function (chapter) {
+          var chapterRow = document.createElement("div");
+          chapterRow.classList.add("image-row");
+
+
+          var chapterTitle = document.createElement("span");
+          chapterTitle.classList.add("image-title");
+          chapterTitle.textContent = chapter.name;
+
+
+          var insertButton = document.createElement("button");
+          insertButton.textContent = "Insert Into Active Cell";
+          insertButton.onclick = function () {
+            google.script.run.insertChapter(chapter);
+          };
+
+
+          chapterRow.appendChild(chapterTitle);
+          chapterRow.appendChild(insertButton);
+          chapterList.appendChild(chapterRow);
+        });
+      }
+
+
+      function autoInsertChapters() {
+        var youtubeUrl = document.getElementById("youtubeUrl").value;
+        document.getElementById("loading").style.display = "block";
+        google.script.run.withSuccessHandler(autoInsertHandler).autoInsertChapters(youtubeUrl);
+      }
+
+
+      function autoInsertHandler(result) {
+        document.getElementById("loading").style.display = "none";
+       
+        if (result.error) {
+          document.getElementById("errorMessage").innerText = result.error;
+          document.getElementById("errorMessage").style.display = "block";
+          return;
+        }
+
+
+        document.getElementById("errorMessage").innerText = result.message;
+        document.getElementById("errorMessage").style.display = "block";
+      }
+
+
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
+
